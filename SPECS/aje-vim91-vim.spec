@@ -2,7 +2,7 @@
 %global _scl_prefix /opt/%{scl_vendor}
 %global scl_name_prefix aje-
 %global scl_name_base vim
-%global scl_name_version 90
+%global scl_name_version 91
 %global scl %{scl_name_prefix}%{scl_name_base}%{scl_name_version}
 %{?scl:%scl_package vim}
 %{!?scl:%global pkg_name %{name}}
