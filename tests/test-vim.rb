@@ -5,12 +5,12 @@ control "vim-is-installed-1.0" do
 
     describe package("aje-vim91-vim") do
         it { should be_installed }
-        its("version") { should match %r{9\.0.*} }
+        its("version") { should match %r{9\.1.*} }
     end
 
     describe package("aje-vim91-vim-common") do
         it { should be_installed }
-        its("version") { should match %r{9\.0.*} }
+        its("version") { should match %r{9\.1.*} }
     end
 end
 
@@ -21,7 +21,7 @@ control "gvim-is-installed-1.0" do
 
     describe package("aje-vim91-vim-gtk") do
         it { should be_installed }
-        its("version") { should match %r{9\.0.*} }
+        its("version") { should match %r{9\.1.*} }
     end
 end
 
@@ -67,7 +67,7 @@ control "minimal-vim-is-working-1.0" do
     desc "The Vim binary must be working and its version has to contain a few keywords"
 
     describe bash("scl enable aje-vim91 'vim --version'") do
-        its("stdout") { should match %r{.*VIM - Vi IMproved 9\.0.*} }
+        its("stdout") { should match %r{.*VIM - Vi IMproved 9\.1.*} }
         its("stdout") { should match %r{.*Huge version without GUI.*} }
         its("stdout") { should match %r{.*\+ruby.*} }
         its("stdout") { should match %r{.*\+python3.*} }
