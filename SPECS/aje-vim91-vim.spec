@@ -197,6 +197,7 @@ chmod +x %{buildroot}%{?_scl_scripts}/deregister.d/20.remove-vimrc
 %lang(fi) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/fi/LC_MESSAGES/vim.mo
 %lang(fr) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/fr/LC_MESSAGES/vim.mo
 %lang(ga) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/ga/LC_MESSAGES/vim.mo
+%lang(hu) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/hu/LC_MESSAGES/vim.mo
 %lang(it) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/it/LC_MESSAGES/vim.mo
 %lang(ja.euc-jp) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/ja.euc-jp/LC_MESSAGES/vim.mo
 %lang(ja.sjis) %{_datadir}/%{pkg_name}/vim%{scl_name_version}/lang/ja.sjis/LC_MESSAGES/vim.mo
