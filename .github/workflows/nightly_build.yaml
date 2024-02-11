@@ -1,0 +1,32 @@
+---
+name: nightly_build
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch: {}
+jobs:
+  update_spec_file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.REPOSITORY_ACCESS_TOKEN }}
+      - name: Install Python dependencies
+        run: |
+          sudo apt-get install -y python3-requests
+      - name: Update SPEC file with last tagged version
+        run: >-
+          python3 update_spec.py --log-level DEBUG "vim/vim"
+          SPECS/aje-vim91-vim.spec SOURCES/changelog-aje-vim91-vim
+      - name: Commit and push updated SPEC file to trigger a rebuild
+        uses: EndBug/add-and-commit@v6
+        with:
+          add: '.'
+          author_name: Antoine Jouve
+          author_email: ant.jouve@gmail.com
+          branch: main
+          cwd: '.'
+          message: 'Nightly rebuild of last Vim tag'
+          push: true
+          token: ${{ secrets.REPOSITORY_ACCESS_TOKEN }}

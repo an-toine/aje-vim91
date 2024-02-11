@@ -1,0 +1,184 @@
+---
+name: rpmbuild
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+jobs:
+  build-scl-rpm:
+    runs-on: ubuntu-latest
+    container: centos:7
+    steps:
+      - name: Install required packages
+        run: |
+          yum install -y rpm-build scl-utils-build scl-utils
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Build SRPM package
+        run: |
+          rpmbuild --define "_topdir `pwd`" -bs ./SPECS/aje-vim91.spec
+      - name: Build RPM package
+        run: |
+          rpmbuild --rebuild --define "_topdir `pwd`" ./SRPMS/*.src.rpm
+      - name: Save RPM artefacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: scl-rpm
+          path: |
+            RPMS/noarch/*.rpm
+          retention-days: 10
+      - name: Save SRPM artefacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: scl-srpm
+          path: |
+            SRPMS/*.rpm
+          retention-days: 10
+  build-vim-rpm:
+    runs-on: ubuntu-latest
+    container: centos:7
+    needs: build-scl-rpm
+    steps:
+      - name: Install required packages
+        run: |
+          yum install -y rpm-build scl-utils-build scl-utils rpmdevtools
+      - name: Fetch SCL rpm artefacts
+        uses: actions/download-artifact@v2
+        with:
+          name: scl-rpm
+      - name: Install SCL packages and clean no longer used rpm files
+        run: |
+          yum install -y ./*.rpm
+          rm -rvf ./*.rpm
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Fetch remote Vim sources
+        run: >-
+          spectool --define "_topdir `pwd`" -g
+          -C SOURCES/ SPECS/aje-vim91-vim.spec
+      - name: Build SRPM package
+        run: |
+          rpmbuild --define "_topdir `pwd`" -bs ./SPECS/aje-vim91-vim.spec
+      - name: Install build dependencies
+        run: |
+          yum-builddep -y ./SRPMS/*.src.rpm
+      - name: Build RPM package
+        run: |
+          rpmbuild --rebuild --define "_topdir `pwd`" ./SRPMS/*.src.rpm
+      - name: Save RPM artefacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vim-rpm
+          path: |
+            RPMS/x86_64/*.rpm
+          retention-days: 10
+      - name: Save SRPM artefacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vim-srpm
+          path: |
+            SRPMS/*.rpm
+          retention-days: 10
+  lint-rpm:
+    runs-on: ubuntu-latest
+    container: centos:7
+    needs: build-vim-rpm
+    steps:
+      - name: Install required packages
+        run: |
+          yum install -y rpmlint
+      - name: Ignore  dir-or-file-in-opt errors
+        run: |
+          echo 'addFilter("E: dir-or-file-in-opt")' >> /etc/rpmlint/config
+          echo 'addFilter("E: non-standard-dir-perm")' >> /etc/rpmlint/config
+          echo 'addFilter("E: useless-provides")' >> /etc/rpmlint/config
+      - name: Fetch SCL RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: scl-rpm
+      - name: Fetch Vim RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: vim-rpm
+      - name: Lint all RPM files
+        run: |
+          rpmlint *.rpm
+  rpm-functionnal-tests:
+    runs-on: ubuntu-latest
+    container: centos:7
+    needs: lint-rpm
+    steps:
+      - name: Install cinc-auditor to run tests
+        run: |
+          curl -L https://omnitruck.cinc.sh/install.sh | bash -s -- -P cinc-auditor -v 4
+      - name: Fetch SCL RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: scl-rpm
+      - name: Fetch Vim RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: vim-rpm
+      - name: Install RPM & clean archives
+        run: |
+          yum install -y ./*.rpm
+          rm -rvf ./*.rpm
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Run functionnal tests
+        run: |
+          cinc-auditor exec tests/*.rb
+  create-release:
+    runs-on: ubuntu-latest
+    needs: rpm-functionnal-tests
+    steps:
+      - name: Fetch SCL RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: scl-rpm
+      - name: Fetch Vim RPM
+        uses: actions/download-artifact@v2
+        with:
+          name: vim-rpm
+      - name: Find Vim version
+        id: extract_version
+        run: >-
+          VERSION=$(find . -type f -name "*vim-9*.rpm" | head -n 1 |
+          awk 'match($0,/.*vim-([0-9\.\-]+)/,m)
+          {print substr(m[1],1,length(m[1])-1)}')
+
+          echo "::set-output name=vim_version::v${VERSION}"
+      - name: Create release for version
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.extract_version.outputs.vim_version }}
+          release_name: Release ${{ steps.extract_version.outputs.vim_version }}
+          body: ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+      # Upload all rpm using script found here :
+      # https://github.com/actions/upload-release-asset/issues/47#issuecomment-698722668
+      - name: Add Vim and SCL rpm to last release
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const path = require('path');
+            const fs = require('fs');
+            const release_id = '${{ steps.create_release.outputs.id }}';
+            for (let file of await fs.readdirSync('./')) {
+              if (path.extname(file) === '.rpm') {
+                console.log('uploadReleaseAsset', file);
+                await github.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release_id,
+                  name: file,
+                  data: await fs.readFileSync(`./${file}`)
+                });
+              }
+            }
