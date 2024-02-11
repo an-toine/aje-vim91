@@ -171,5 +171,5 @@ mkdir -p %{buildroot}%{?_scl_scripts}/register.content%{_sysconfdir}
 %config(noreplace) %{_root_sysconfdir}/rpm/macros.%{scl_name_base}-scldevel
 
 %changelog
-* Sun Feb 11 2024 Antoine Jouve <ant.jouve@gmail.com> - 9.1.0095
-- Rebuild Vim release v9.1.0095
+* Sun Feb 11 2024 Antoine Jouve <ant.jouve@gmail.com> - 1-1
+- First build of scl package version 91
