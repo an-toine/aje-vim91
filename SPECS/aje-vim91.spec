@@ -3,7 +3,7 @@
 %global _scl_prefix /opt/%{scl_vendor}
 %global scl_name_prefix aje-
 %global scl_name_base vim
-%global scl_name_version 90
+%global scl_name_version 91
 
 %global scl %{scl_name_prefix}%{scl_name_base}%{scl_name_version}
 
@@ -14,7 +14,7 @@
 %scl_package %scl
 
 # SCL package metadatas
-Summary: A Software Collection enabling Vim 90
+Summary: A Software Collection enabling Vim 91
 Name: %scl_name
 Version: 1
 Release: 1%{dist}
@@ -171,5 +171,5 @@ mkdir -p %{buildroot}%{?_scl_scripts}/register.content%{_sysconfdir}
 %config(noreplace) %{_root_sysconfdir}/rpm/macros.%{scl_name_base}-scldevel
 
 %changelog
-* Sun Jul 10 2022 Antoine Jouve <ant.jouve@gmail.com> - 1-1
-- First build of scl package version 90
+* Sun Feb 11 2024 Antoine Jouve <ant.jouve@gmail.com> - 9.1.0095
+- Rebuild Vim release v9.1.0095
