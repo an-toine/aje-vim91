@@ -12,7 +12,7 @@
 
 Summary: A greatly improved version of the good old UNIX editor Vi
 Name: %{?scl_prefix}%{pkg_name}
-Version: 9.2.1091
+Version: 9.2.1099
 Release: 1%{?dist}
 License: GPLv2
 Group: Applications/Text
